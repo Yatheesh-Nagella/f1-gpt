@@ -4,4 +4,87 @@ import OpenAI from "openai";
 
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
-import "dotenv/config";
+import "dotenv/config"
+
+// Define the type for similarity algorithms
+type SimilarityMetric = "dot_product" | "cosine" | "euclidean";
+
+const { ASTRA_DB_NAMESPACE,
+    ASTRA_DB_COLLECTION,
+    ASTRA_DB_API_ENDPOINT,
+    ASTRA_DB_APPLICATION_TOKEN,
+    OPENAI_API_KEY
+} = process.env;
+
+const openai = new OpenAI({
+    apiKey: OPENAI_API_KEY,
+});
+
+const f1Data = [
+    "https://en.wikipedia.org/wiki/Formula_One",
+    "https://en.wikipedia.org/wiki/History_of_Formula_One",
+    "https://en.wikipedia.org/wiki/List_of_Formula_One_drivers",
+]
+
+const client = new DataAPIClient(ASTRA_DB_APPLICATION_TOKEN)
+const db = client.db(ASTRA_DB_API_ENDPOINT, { namespace: ASTRA_DB_NAMESPACE });
+
+// Initialize the text splitter - you can adjust chunkSize and chunkOverlap as needed - refer {@link https://dev.to/peterabel/what-chunk-size-and-chunk-overlap-should-you-use-4338, https://python.langchain.com/docs/concepts/text_splitters/}
+const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 512,
+    chunkOverlap: 100,
+});
+
+const createCollection = async (similarityMetric: SimilarityMetric = "dot_product") => {
+    const res = await db.createCollection(ASTRA_DB_COLLECTION, {
+        vector: {
+            dimension: 1536,
+            metric: similarityMetric,
+        }
+    });
+    console.log("Collection creation response: ", res);
+}
+
+const loadSampleData = async () => {
+    const collection = await db.collection(ASTRA_DB_COLLECTION);
+    for await (const url of f1Data) {
+        const content = await scrapePage(url)
+        const chunks = await splitter.splitText(content)
+        // https://platform.openai.com/docs/guides/embeddings/what-are-embeddings%23.pls
+        for await (const chunk of chunks) {
+            const embedding = await openai.embeddings.create({
+                model: "text-embedding-3-small",
+                input: chunk,
+                encoding_format: "float"
+            })
+
+            const vector = embedding.data[0].embedding;
+            const res = await collection.insertOne({
+                $vector: vector,
+                text: chunk,
+            })
+            console.log("Insert response: ", res);
+        }
+    }
+
+}
+
+// scrape webpage
+const scrapePage = async (url: string) => {
+    const loader = new PuppeteerWebBaseLoader(url, {
+        launchOptions: {
+            headless: true,
+        },
+        gotoOptions: {
+            waitUntil: "domcontentloaded",
+        },
+        evaluate: async (page, browser) => {
+            const result = await page.evaluate(() => document.body.innerHTML);
+            await browser.close();
+            return result;
+        },
+    });
+    return (await loader.scrape())?.replace(/<[^>]*>?/gm, "");
+};
+
+createCollection().then(() => loadSampleData());
