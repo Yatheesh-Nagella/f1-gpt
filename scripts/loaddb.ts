@@ -38,6 +38,7 @@ const f1Data = [
     "https://en.wikipedia.org/wiki/Formula_One",
     "https://en.wikipedia.org/wiki/History_of_Formula_One",
     "https://en.wikipedia.org/wiki/List_of_Formula_One_drivers",
+    "https://www.formula1.com/en/racing/2025"
 ]
 
 const client = new DataAPIClient(ASTRA_DB_APPLICATION_TOKEN)
@@ -50,13 +51,31 @@ const splitter = new RecursiveCharacterTextSplitter({
 });
 
 const createCollection = async (similarityMetric: SimilarityMetric = "dot_product") => {
-    const res = await db.createCollection(ASTRA_DB_COLLECTION, {
-        vector: {
-            dimension: 1536,
-            metric: similarityMetric,
+    try {
+        // Check if collection already exists
+        const collections = await db.listCollections();
+        const collectionExists = collections.some(col => col.name === ASTRA_DB_COLLECTION);
+
+        if (collectionExists) {
+            console.log(`Collection '${ASTRA_DB_COLLECTION}' already exists. Skipping creation.`);
+            return;
         }
-    });
-    console.log("Collection creation response: ", res);
+
+        const res = await db.createCollection(ASTRA_DB_COLLECTION, {
+            vector: {
+                dimension: 1536,
+                metric: similarityMetric,
+            }
+        });
+        console.log("Collection creation response: ", res);
+    } catch (error) {
+        // Handle the specific CollectionAlreadyExistsError
+        if (error instanceof Error && error.message.includes('already exists')) {
+            console.log(`Collection '${ASTRA_DB_COLLECTION}' already exists. Continuing with data loading...`);
+        } else {
+            throw error;
+        }
+    }
 }
 
 const loadSampleData = async () => {

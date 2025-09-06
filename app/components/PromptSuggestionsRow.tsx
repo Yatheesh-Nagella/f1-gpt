@@ -2,9 +2,12 @@ import PromptSuggestionButton from "./PromptSuggestionButton";
 
 const PromptSuggestionRow = ({ onPromptClick }) => {
     const prompts = [
-        "Give out the race results?",
-        "Who is the youngest F1 World Champion?",
-        "Who is the newest F1 World Champion?"
+        "What are the current F1 team standings?",
+        "What was the fastest F1 lap time ever recorded?",
+        "Who has the most F1 World Championships?",
+        "Tell me about the history of the Monaco Grand Prix.",
+        "Who won the F1 World Championship in 2023?",
+        "What are the key rules and regulations in Formula 1 racing?"
     ];
 
     return(
