@@ -16,6 +16,20 @@ const { ASTRA_DB_NAMESPACE,
     OPENAI_API_KEY
 } = process.env;
 
+// Validate required environment variables
+if (!ASTRA_DB_API_ENDPOINT) {
+    throw new Error('ASTRA_DB_API_ENDPOINT is required');
+}
+if (!ASTRA_DB_APPLICATION_TOKEN) {
+    throw new Error('ASTRA_DB_APPLICATION_TOKEN is required');
+}
+if (!ASTRA_DB_COLLECTION) {
+    throw new Error('ASTRA_DB_COLLECTION is required');
+}
+if (!OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is required');
+}
+
 const openai = new OpenAI({
     apiKey: OPENAI_API_KEY,
 });
