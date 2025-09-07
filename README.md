@@ -70,18 +70,41 @@ f1-gpt/
 ├── app/
 │   ├── api/
 │   │   └── chat/
-│   │       └── route.ts          # Chat API endpoint
+│   │       └── route.ts            # Chat API endpoint (OpenAI + Astra DB)
+│   ├── assets/
+│   │   ├── background.jpeg         # Background image
+│   │   └── logo.webp               # F1 GPT logo
 │   ├── components/
-│   │   └── Bubble.tsx            # UI component
-│   ├── globals.css               # Global styles
-│   ├── layout.tsx                # Root layout
-│   └── page.tsx                  # Home page
+│   │   ├── Bubble.tsx              # Chat bubble component
+│   │   ├── LoadingBubble.tsx       # Loading indicator bubble
+│   │   └── PromptSuggestionsRow.tsx# Prompt suggestions row
+│   ├── global.css                  # Global styles
+│   ├── layout.tsx                  # App root layout
+│   └── page.tsx                    # Main chat page
+├── pages/
+│   ├── _app.tsx                    # Custom App component (legacy)
+│   ├── _document.tsx               # Custom Document (legacy)
+│   ├── index.tsx                   # Legacy home page
+│   └── api/
+│       └── hello.ts                # Example API route
+├── public/
+│   ├── favicon.ico                 # Favicon
+│   ├── file.svg                    # SVG assets
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
 ├── scripts/
-│   └── loaddb.ts                 # Database seeding script
-├── public/                       # Static assets
-├── .env.local                    # Environment variables
-├── next.config.js                # Next.js configuration
-└── package.json                  # Dependencies
+│   └── loaddb.ts                   # Database seeding script
+├── styles/
+│   ├── globals.css                 # Global CSS
+│   └── Home.module.css             # Home page styles
+├── .env.local                      # Environment variables (not committed)
+├── next.config.js                  # Next.js configuration
+├── package.json                    # Project dependencies
+├── tsconfig.json                   # TypeScript configuration
+├── README.md                       # Project documentation
+└── LICENSE                         # Project license
 ```
 
 ## 🎮 Usage
