@@ -44,80 +44,185 @@ const f1Data = [
 const client = new DataAPIClient(ASTRA_DB_APPLICATION_TOKEN)
 const db = client.db(ASTRA_DB_API_ENDPOINT, { namespace: ASTRA_DB_NAMESPACE });
 
-// Initialize the text splitter - you can adjust chunkSize and chunkOverlap as needed - refer {@link https://dev.to/peterabel/what-chunk-size-and-chunk-overlap-should-you-use-4338, https://python.langchain.com/docs/concepts/text_splitters/}
+// Initialize the text splitter
 const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: 512,
     chunkOverlap: 100,
 });
 
-const createCollection = async (similarityMetric: SimilarityMetric = "dot_product") => {
+const ensureCollection = async (similarityMetric: SimilarityMetric = "dot_product") => {
     try {
-        // Check if collection already exists
-        const collections = await db.listCollections();
-        const collectionExists = collections.some(col => col.name === ASTRA_DB_COLLECTION);
-
-        if (collectionExists) {
-            console.log(`Collection '${ASTRA_DB_COLLECTION}' already exists. Skipping creation.`);
+        console.log(`Checking if collection '${ASTRA_DB_COLLECTION}' exists...`);
+        
+        // Try to access the collection first
+        const collection = await db.collection(ASTRA_DB_COLLECTION);
+        
+        try {
+            // Try a simple operation to see if collection exists
+            await collection.countDocuments({}, 1);
+            console.log(`✓ Collection '${ASTRA_DB_COLLECTION}' already exists and is accessible.`);
             return;
+        } catch (collectionError) {
+            console.log(`Collection might not exist, attempting to create...`);
         }
 
+        // If we get here, try to create the collection
         const res = await db.createCollection(ASTRA_DB_COLLECTION, {
             vector: {
                 dimension: 1536,
                 metric: similarityMetric,
             }
         });
-        console.log("Collection creation response: ", res);
-    } catch (error) {
+        console.log("✓ Collection created successfully:", res);
+        
+    } catch (error: any) {
         // Handle the specific CollectionAlreadyExistsError
-        if (error instanceof Error && error.message.includes('already exists')) {
-            console.log(`Collection '${ASTRA_DB_COLLECTION}' already exists. Continuing with data loading...`);
-        } else {
-            throw error;
+        if (error.message?.includes('already exists') || error.constructor?.name === 'CollectionAlreadyExistsError') {
+            console.log(`✓ Collection '${ASTRA_DB_COLLECTION}' already exists. Continuing...`);
+            return;
         }
+        
+        console.error("Error with collection setup:", error);
+        throw error;
     }
 }
 
 const loadSampleData = async () => {
+    console.log("🚀 Starting data loading process...");
+    
     const collection = await db.collection(ASTRA_DB_COLLECTION);
-    for await (const url of f1Data) {
-        const content = await scrapePage(url)
-        const chunks = await splitter.splitText(content)
-        // https://platform.openai.com/docs/guides/embeddings/what-are-embeddings%23.pls
-        for await (const chunk of chunks) {
-            const embedding = await openai.embeddings.create({
-                model: "text-embedding-3-small",
-                input: chunk,
-                encoding_format: "float"
-            })
+    
+    // Check existing documents count
+    try {
+        const existingCount = await collection.countDocuments({}, 1000);
+        console.log(`📊 Current documents in collection: ${existingCount}`);
+    } catch (error) {
+        console.log("Could not count existing documents, continuing...");
+    }
+    
+    let totalChunksProcessed = 0;
+    
+    for (const [urlIndex, url] of f1Data.entries()) {
+        console.log(`\n📄 Processing ${urlIndex + 1}/${f1Data.length}: ${url}`);
+        
+        try {
+            const content = await scrapePage(url);
+            
+            if (!content || content.trim().length === 0) {
+                console.log(`⚠️ No content scraped from ${url}, skipping...`);
+                continue;
+            }
+            
+            const chunks = await splitter.splitText(content);
+            console.log(`📝 Generated ${chunks.length} chunks from ${url}`);
+            
+            // Process chunks in batches to avoid rate limits
+            for (const [chunkIndex, chunk] of chunks.entries()) {
+                if (chunk.trim().length < 50) {
+                    console.log(`⚠️ Skipping very short chunk ${chunkIndex + 1}`);
+                    continue;
+                }
+                
+                try {
+                    console.log(`⚙️ Processing chunk ${chunkIndex + 1}/${chunks.length} from ${url}`);
+                    
+                    const embedding = await openai.embeddings.create({
+                        model: "text-embedding-3-small",
+                        input: chunk.trim(),
+                        encoding_format: "float"
+                    });
 
-            const vector = embedding.data[0].embedding;
-            const res = await collection.insertOne({
-                $vector: vector,
-                text: chunk,
-            })
-            console.log("Insert response: ", res);
+                    const vector = embedding.data[0].embedding;
+                    const res = await collection.insertOne({
+                        $vector: vector,
+                        text: chunk.trim(),
+                        source: url,
+                        sourceIndex: urlIndex,
+                        chunkIndex: chunkIndex,
+                        createdAt: new Date().toISOString(),
+                        contentLength: chunk.length
+                    });
+                    
+                    totalChunksProcessed++;
+                    console.log(`✅ Inserted chunk ${chunkIndex + 1}/${chunks.length} (Total: ${totalChunksProcessed})`);
+                    
+                    // Small delay to avoid rate limits
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                } catch (chunkError) {
+                    console.error(`❌ Error processing chunk ${chunkIndex + 1} from ${url}:`, chunkError);
+                    continue; // Continue with next chunk
+                }
+            }
+            
+            console.log(`✅ Completed processing: ${url}`);
+            
+        } catch (urlError) {
+            console.error(`❌ Error processing URL ${url}:`, urlError);
+            continue; // Continue with next URL
         }
     }
-
+    
+    console.log(`\n🎉 Finished! Processed ${totalChunksProcessed} chunks total.`);
 }
 
-// scrape webpage
-const scrapePage = async (url: string) => {
-    const loader = new PuppeteerWebBaseLoader(url, {
-        launchOptions: {
-            headless: true,
-        },
-        gotoOptions: {
-            waitUntil: "domcontentloaded",
-        },
-        evaluate: async (page, browser) => {
-            const result = await page.evaluate(() => document.body.innerHTML);
-            await browser.close();
-            return result;
-        },
-    });
-    return (await loader.scrape())?.replace(/<[^>]*>?/gm, "");
+// Enhanced scraping function with better error handling
+const scrapePage = async (url: string): Promise<string> => {
+    console.log(`🔍 Scraping: ${url}`);
+    
+    try {
+        const loader = new PuppeteerWebBaseLoader(url, {
+            launchOptions: {
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            },
+            gotoOptions: {
+                waitUntil: "domcontentloaded",
+                timeout: 30000
+            },
+            evaluate: async (page, browser) => {
+                try {
+                    const result = await page.evaluate(() => {
+                        // Remove script and style elements
+                        const scripts = document.querySelectorAll('script, style');
+                        scripts.forEach(el => el.remove());
+                        
+                        // Get main content (try different selectors)
+                        const content = 
+                            document.querySelector('main')?.textContent ||
+                            document.querySelector('.mw-parser-output')?.textContent ||
+                            document.querySelector('article')?.textContent ||
+                            document.body.textContent ||
+                            '';
+                        
+                        return content.trim();
+                    });
+                    return result;
+                } finally {
+                    await browser.close();
+                }
+            },
+        });
+        
+        const content = await loader.scrape();
+        console.log(`✅ Successfully scraped ${content?.length || 0} characters from ${url}`);
+        return content || '';
+        
+    } catch (error) {
+        console.error(`❌ Failed to scrape ${url}:`, error);
+        return '';
+    }
 };
 
-createCollection().then(() => loadSampleData());
+// Main execution
+async function main() {
+    try {
+        await ensureCollection();
+        await loadSampleData();
+    } catch (error) {
+        console.error("❌ Script failed:", error);
+        process.exit(1);
+    }
+}
+
+main();
