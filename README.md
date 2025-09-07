@@ -81,12 +81,6 @@ f1-gpt/
 │   ├── global.css                  # Global styles
 │   ├── layout.tsx                  # App root layout
 │   └── page.tsx                    # Main chat page
-├── pages/
-│   ├── _app.tsx                    # Custom App component (legacy)
-│   ├── _document.tsx               # Custom Document (legacy)
-│   ├── index.tsx                   # Legacy home page
-│   └── api/
-│       └── hello.ts                # Example API route
 ├── public/
 │   ├── favicon.ico                 # Favicon
 │   ├── file.svg                    # SVG assets
@@ -104,6 +98,7 @@ f1-gpt/
 ├── package.json                    # Project dependencies
 ├── tsconfig.json                   # TypeScript configuration
 ├── README.md                       # Project documentation
+├── tailwind.config.js              # Tailwind CSS configuration
 └── LICENSE                         # Project license
 ```
 
