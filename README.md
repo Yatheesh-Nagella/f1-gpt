@@ -2,27 +2,31 @@
 
 An AI-powered Formula 1 chatbot built with Next.js, OpenAI, and DataStax Astra DB that provides intelligent answers about Formula 1 racing, drivers, teams, and history.
 
+**Live Demo**: [https://f1-jcx8yjg0o-yatheesh-nagellas-projects.vercel.app/](https://f1-jcx8yjg0o-yatheesh-nagellas-projects.vercel.app/)
+
 ## 🎯 Features
 
 - **Intelligent F1 Assistant**: Ask questions about Formula 1 drivers, teams, races, and statistics
 - **Real-time Streaming**: Get responses in real-time with streaming text output
 - **Vector Search**: Powered by DataStax Astra DB for semantic search through F1 knowledge base
-- **Modern UI**: Clean and responsive interface with F1-themed design
+- **Modern UI**: Clean and responsive interface with glassmorphism effects and F1-themed design
+- **Home & GitHub Integration**: Quick access to reset and view source code
 - **Comprehensive Knowledge**: Pre-loaded with Wikipedia data about Formula 1
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 14, TypeScript, Pure CSS (no framework dependencies)
 - **AI/ML**: OpenAI GPT-3.5-turbo, OpenAI Embeddings (text-embedding-3-small)
 - **Database**: DataStax Astra DB (Vector Database)
-- **Deployment**: Vercel (recommended)
+- **UI Components**: Lucide React icons
+- **Deployment**: Vercel
 - **Data Processing**: LangChain, Puppeteer for web scraping
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 20.11.0
+- Node.js 18+ 
 - npm or yarn
 - DataStax Astra DB account
 - OpenAI API key
@@ -50,7 +54,7 @@ An AI-powered Formula 1 chatbot built with Next.js, OpenAI, and DataStax Astra D
    OPENAI_API_KEY=your_openai_api_key
    ```
 
-4. **Seed the database**
+4. **Seed the database** (optional - if you want to add more data)
    ```bash
    npm run seed
    ```
@@ -77,28 +81,18 @@ f1-gpt/
 │   ├── components/
 │   │   ├── Bubble.tsx              # Chat bubble component
 │   │   ├── LoadingBubble.tsx       # Loading indicator bubble
-│   │   └── PromptSuggestionsRow.tsx# Prompt suggestions row
-│   ├── global.css                  # Global styles
+│   │   ├── PromptSuggestionsRow.tsx# Prompt suggestions row
+│   │   └── PromptSuggestionButton.tsx # Individual suggestion cards
+│   ├── global.css                  # Global styles with glassmorphism effects
 │   ├── layout.tsx                  # App root layout
 │   └── page.tsx                    # Main chat page
-├── public/
-│   ├── favicon.ico                 # Favicon
-│   ├── file.svg                    # SVG assets
-│   ├── globe.svg
-│   ├── next.svg
-│   ├── vercel.svg
-│   └── window.svg
 ├── scripts/
 │   └── loaddb.ts                   # Database seeding script
-├── styles/
-│   ├── globals.css                 # Global CSS
-│   └── Home.module.css             # Home page styles
 ├── .env.local                      # Environment variables (not committed)
 ├── next.config.js                  # Next.js configuration
 ├── package.json                    # Project dependencies
 ├── tsconfig.json                   # TypeScript configuration
 ├── README.md                       # Project documentation
-├── tailwind.config.js              # Tailwind CSS configuration
 └── LICENSE                         # Project license
 ```
 
@@ -111,13 +105,19 @@ Simply type your Formula 1 questions in the chat interface:
 - "What are the F1 team standings?"
 - "How does DRS work in Formula 1?"
 
-### Prompt Suggestions
-The app includes built-in prompt suggestions covering:
-- **Current Season**: Championship standings, driver performance
-- **Historical Data**: Records, legendary drivers, memorable moments
-- **Technical**: Car mechanics, rules, strategies
-- **Teams**: Constructor history and achievements
-- **Circuits**: Track information and characteristics
+### Built-in Features
+- **Suggestion Cards**: Click on pre-built prompts covering standings, records, champions, history, recent events, and rules
+- **Home Button**: Reset to the welcome screen anytime
+- **GitHub Button**: View the source code on GitHub
+- **Responsive Design**: Works seamlessly on desktop and mobile
+
+### Prompt Categories
+- **Standings**: Current F1 team standings
+- **Records**: Fastest lap times and racing records
+- **Champions**: World championship history and drivers
+- **History**: Monaco Grand Prix and other historical events
+- **Recent**: Latest championship results
+- **Rules**: F1 regulations and technical details
 
 ## 🔧 Configuration
 
@@ -137,45 +137,30 @@ The app includes built-in prompt suggestions covering:
 
 ### OpenAI Configuration
 
-- **Model**: GPT-4.0 for chat completion
-- **Embeddings**: text-embedding-4.0 (1536 dimensions)
-- **Streaming**: Enabled for real-time responses
+- **Model**: GPT-3.5-turbo for chat completion
+- **Embeddings**: text-embedding-3-small (1536 dimensions)
+- **Streaming**: Enabled for real-time responses via Vercel AI SDK
 
-## 🎨 Customization
+## 🎨 Design Features
 
-### Adding New Data Sources
+### Modern UI Elements
+- **Glassmorphism Effects**: Semi-transparent cards with backdrop blur
+- **F1 Theme**: Red and black color scheme inspired by Formula 1
+- **Animated Backgrounds**: Subtle floating orbs and gradient effects
+- **Responsive Grid**: Suggestion cards adapt to screen size
+- **Smooth Transitions**: Hover effects and micro-interactions
 
-Edit `scripts/loaddb.ts` and add URLs to the `f1Data` array:
-```typescript
-const f1Data = [
-    "https://en.wikipedia.org/wiki/Formula_One",
-    "https://en.wikipedia.org/wiki/History_of_Formula_One",
-    // Add more URLs here
-];
-```
-
-### Modifying Prompt Suggestions
-
-Update the suggestions in your components:
-```typescript
-const suggestions = [
-    "Your custom F1 question here",
-    // Add more suggestions
-];
-```
-
-### Styling
-
-The app uses Tailwind CSS with a red and black F1-themed color scheme:
-- Primary: Red variants (`red-600`, `red-700`)
-- Secondary: Black and gray tones
-- Accent: White for contrast
+### CSS Architecture
+- **Pure CSS**: No external CSS frameworks for better performance
+- **Custom Animations**: Pulse effects, bounce animations, and smooth transitions
+- **Mobile-First**: Responsive design with mobile-optimized touch targets
 
 ## 📊 Performance
 
 - **Chunk Size**: 512 characters with 100 character overlap
 - **Vector Search**: Top 10 most relevant chunks per query
 - **Response Time**: Typically 2-5 seconds for complete responses
+- **Build Size**: ~110KB First Load JS for optimal performance
 - **Embedding Cache**: Embeddings stored in Astra DB for fast retrieval
 
 ## 🚨 Troubleshooting
@@ -190,15 +175,17 @@ The app uses Tailwind CSS with a red and black F1-themed color scheme:
 
 2. **Environment Variables Not Found**
    - Ensure all required variables are in `.env.local`
+   - For Vercel deployment, add them in the dashboard
    - Check variable names match exactly
 
 3. **OpenAI Rate Limits**
    - Implement rate limiting in production
    - Consider upgrading to higher tier OpenAI plan
 
-4. **Module Resolution Issues**
-   - Delete `node_modules` and `package-lock.json`
-   - Run `npm install` again
+4. **Build Issues**
+   - Ensure Node.js 18+ is installed
+   - Delete `node_modules` and run `npm install`
+   - Check for TypeScript errors with `npm run build`
 
 ## 🔐 Security
 
@@ -209,25 +196,31 @@ The app uses Tailwind CSS with a red and black F1-themed color scheme:
 
 ## 📈 Deployment
 
-### Vercel Deployment (Recommended)
+### Vercel Deployment (Used for live demo)
 
-1. **Connect to Vercel**
+1. **Push to GitHub**
    ```bash
-   vercel --prod
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
    ```
 
-2. **Add Environment Variables**
-   In Vercel dashboard, add all environment variables from `.env.local`
+2. **Connect to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Vercel auto-detects Next.js configuration
 
-3. **Deploy**
-   ```bash
-   vercel deploy --prod
-   ```
+3. **Add Environment Variables**
+   In Vercel dashboard, add all variables from `.env.local`
 
-### Alternative Platforms
-- **Netlify**: Requires build command adjustments
-- **Railway**: Good for full-stack apps
-- **DigitalOcean App Platform**: Scalable option
+4. **Deploy**
+   Vercel automatically builds and deploys on every push to main
+
+### Build Configuration
+- **Framework**: Next.js
+- **Build Command**: `npm run build`
+- **Output Directory**: `.next`
+- **Node.js Version**: 18.x
 
 ## 🤝 Contributing
 
@@ -243,10 +236,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- OpenAI for GPT-5 and embeddings API
+- OpenAI for GPT-3.5-turbo and embeddings API
 - DataStax for Astra DB vector database
+- Vercel AI SDK for streaming responses
 - LangChain for document processing
-- Next.js team for the awesome framework
+- Next.js team for the framework
+- Lucide React for beautiful icons
 - Formula 1 community for the inspiration
 
 ## 📞 Support
@@ -254,8 +249,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you encounter any issues or have questions:
 - Open an issue on GitHub
 - Check the troubleshooting section above
-- Review the DataStax Astra DB documentation
-- Consult OpenAI API documentation
+- Review the [live demo](https://f1-jcx8yjg0o-yatheesh-nagellas-projects.vercel.app/)
+- Consult the DataStax Astra DB documentation
+- Review OpenAI API documentation
 
 ---
 
