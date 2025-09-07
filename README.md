@@ -2,7 +2,7 @@
 
 An AI-powered Formula 1 chatbot built with Next.js, OpenAI, and DataStax Astra DB that provides intelligent answers about Formula 1 racing, drivers, teams, and history.
 
-**Live Demo**: [https://f1-jcx8yjg0o-yatheesh-nagellas-projects.vercel.app/](https://f1-jcx8yjg0o-yatheesh-nagellas-projects.vercel.app/)
+**Live Demo**: [https://f1-gpt-eta.vercel.app/](https://f1-gpt-eta.vercel.app/)
 
 ## 🎯 Features
 
